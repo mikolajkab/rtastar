@@ -6,8 +6,8 @@ import math
 from operator import attrgetter
 
 
-MAZE_HEIGHT = 8
-MAZE_WIDTH = 8
+MAZE_HEIGHT = 14
+MAZE_WIDTH = 14
 STEP_COST = 3
 
 POPULATION = [0, 1]
@@ -56,6 +56,7 @@ class Tile:
         self.isWall = [False]
         self.isGoal = False
         self.h = '-'
+        self.h_prime = '-'
         self.f = '-'
 
     def setWall(self, wall):
@@ -96,6 +97,19 @@ LAYOUT = [[1, 1, 1, 1, 1, 1, 1],
           [1, 0, 1, 1, 0, 0, 1],
           [1, 0, 0, 0, 0, 1, 1],
           [1, 1, 1, 1, 1, 1, 1]]
+
+LAYOUT = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+          [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+          [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+          [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+          [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+          [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+          [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+          [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+          [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+          [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+          [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
 
 
 class Maze:
@@ -144,7 +158,7 @@ class Maze:
         unvisited = []
         for t in adjacent:
             if t.getWall() == [0] and t.getH() == '-':
-                t.setH(tile.getH()+random.randint(1, 1))
+                t.setH(tile.getH()+random.randint(1, 3))
                 unvisited.append(t)
         return unvisited
 
@@ -178,60 +192,87 @@ class Maze:
     def RTAStar(self, x_start, y_start):
         actual = self.maze[x_start][y_start]
         listing = []
+        wykaz = []
         descendants = self.generateDescendants(actual)
         actual.setF(self.getMinH(descendants))
         ancestor = None
         iter = 0
-        while actual.getGoal() != True and iter < 20:
+        while actual.getGoal() != True:
             iter += 1
             print("\n**** ITERATION", iter, "****")
-            print("actual:", (actual.x, actual.y))
+            print("actual:", (actual.x, actual.y),
+                  "h", actual.h, "f", actual.f)
             descendants = self.generateDescendants(actual)
-            if ancestor:
+            # descendants_temp = [
+            #     x for x in descendants if x not in wykaz]
+            # descendants = descendants_temp
+            if ancestor in descendants:
                 descendants.remove(ancestor)
             # for descendant in descendants:
-            #     print("descendant:", (descendant.x, descendant.y))
+                # print("desc:", (descendant.x, descendant.y))
             for descendant in descendants:
                 descendants_prime = self.generateDescendants(descendant)
                 descendants_prime.remove(actual)
-                print("descendant:", (descendant.x, descendant.y))
-                if descendants_prime:
-                    for dp in descendants_prime:
-                        print("descendant_prime:", (dp.x, dp.y))
-                    print("minH", (descendant.x, descendant.y),
-                          self.getMinH(descendants_prime))
-                    descendant.setH(self.getMinH(descendants_prime))
-                    print("minF", (descendant.x, descendant.y),
-                          self.getMinH(descendants_prime)+STEP_COST)
-                    descendant.setF(self.getMinH(descendants_prime)+STEP_COST)
-                else:
-                    descendant.setH(0)
+                # print("descendant:", (descendant.x, descendant.y),
+                #       "h", descendant.h, "f", descendant.f)
+                if descendant.h == 0:
+                    descendant.h_prime = 0
                     descendant.setF(STEP_COST)
-            if ancestor:
-                print("ancestorH", (ancestor.x, ancestor.y), ancestor.h)
+                elif descendants_prime:
+                    # for dp in descendants_prime:
+                    #     print("descendant_prime:", (dp.x, dp.y))
+                    # print("minH_prime", (descendant.x, descendant.y),
+                    #       self.getMinH(descendants_prime))
+                    descendant.setH(self.getMinH(descendants_prime))
+                    descendant.h_prime = self.getMinH(descendants_prime)
+
+                    # print("minF", (descendant.x, descendant.y),
+                    #       self.getMinH(descendants_prime)+STEP_COST)
+                    descendant.setF(self.getMinH(
+                        descendants_prime)+STEP_COST)
+                else:
+                    descendant.h_prime = actual.h+STEP_COST
+            for descendant in descendants:
+                descendant.h = descendant.h_prime
+
+            if ancestor and (actual.x, actual.y) not in wykaz:
+                # print("ancestorH", (ancestor.x, ancestor.y), ancestor.h)
                 ancestor.setF(ancestor.getH()-STEP_COST)
+                # print("ancestorF", (ancestor.x, ancestor.y), "f", ancestor.f)
                 descendants.append(ancestor)
             for descendant in descendants:
-                print("descendant:", (descendant.x, descendant.y))
+                print("descendant:", (descendant.x, descendant.y),
+                      "h", descendant.h, "f", descendant.f)
             tileSecondMinF = self.getTileSecondMinF(descendants)
-            print("tileSecondMinF:", (tileSecondMinF.x, tileSecondMinF.y))
-            for descendant in descendants:
-                print("descendant:", (descendant.x, descendant.y))
-            new_actual = self.getTileMinF(descendants)
-            print("new_actual:", (new_actual.x, new_actual.y))
-
+            # print("tileSecondMinF:", (tileSecondMinF.x, tileSecondMinF.y))
+            # for descendant in descendants:
+            #     print("descendant:", (descendant.x, descendant.y))
+            new = self.getTileMinF(descendants)
+            print("new:", (new.x, new.y),
+                  "h", new.h, "f", new.f)
             actual.setH(tileSecondMinF.getF())
             listing.append(actual)
+            if (actual.x, actual.y) not in wykaz:
+                wykaz.append((actual.x, actual.y))
             ancestor = actual
-            actual = new_actual
+            print("actual:", (actual.x, actual.y),
+                  "h", ancestor.h, "f", ancestor.f)
 
-            for item in listing:
-                print("listing:", (item.x, item.y))
+            actual = new
 
-        print("\n****Found gola at", (actual.x, actual.y),  "****")
+            # for item in listing:
+            #     print("listing:", (item.x, item.y))
+
+            self.printCost()
+
+        print("\n****Found goal at", (actual.x, actual.y),  "****")
         listing.append(actual)
-        for item in listing:
-            print("listing:", (item.x, item.y))
+        # for item in listing:
+        #     print("listing:", (item.x, item.y))
+        l = [(item.x, item.y) for item in listing]
+        print("\n listing:", l)
+        wykaz.append((actual.x, actual.y))
+        print("\n wykaz", wykaz)
 
 
 def display_maze(maze):
@@ -250,9 +291,9 @@ wall = Wall()
 
 maze = Maze(LAYOUT)
 display_maze(maze.getMaze())
-maze.setCost(1, 1)
+maze.setCost(5, 6)
 maze.printCost()
-maze.RTAStar(5, 4)
+maze.RTAStar(1, 9)
 
 # turtle.done()
 
