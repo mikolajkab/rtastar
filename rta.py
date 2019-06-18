@@ -15,29 +15,20 @@ WEIGHTS = [0.5, 0.5]
 
 window = turtle.Screen()
 window.bgcolor("black")
-window.title("Real-time A* algorithm")
-window.setup(MAZE_HEIGHT*30, MAZE_WIDTH*30, 100, 100)
+window.title("Real-time A* algorithm: maze")
+window.setup(MAZE_HEIGHT*300, MAZE_WIDTH*300, 100, 100)
+# window.setworldcoordinates(0, 994.80, 1060.80, 0)
 
 
 class Wall(turtle.Turtle):
     def __init__(self):
         turtle.Turtle.__init__(self)
         self.shape("square")
-        self.color("white")
         self.penup()
         self.speed(0)
 
     def setColor(self, color):
         self.color(color)
-
-
-class Player(turtle.Turtle):
-    def __init__(self):
-        turtle.Turtle.__init__(self)
-        self.shape("square")
-        self.color("blue")
-        self.penup()
-        self.speed(0)
 
 
 class Tile:
@@ -49,6 +40,7 @@ class Tile:
         self.h = '-'
         self.h_prime = '-'
         self.f = '-'
+        self.id = 0
 
     def setWall(self, wall):
         self.isWall = wall
@@ -104,13 +96,17 @@ LAYOUT3 = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 
 
 class Maze:
-    def __init__(self, layout, wall):
+    def __init__(self, layout, wall, node):
         self.wall = wall
+        self.node = node
         self.maze = []
+        id = 0
         for x in range(len(layout)):
             row = []
             for y in range(len(layout[0])):
                 tile = Tile(x, y)
+                id += 1
+                tile.id = id
                 if layout[x][y] == 1:
                     tile.setWall([True])
                 row.append(tile)
@@ -184,7 +180,7 @@ class Maze:
     def RTAStar(self, x_start, y_start):
         actual = self.maze[x_start][y_start]
         self.markTile(actual, "green")
-        self.wall.speed(1)
+        self.wall.speed(0)
         listing = []
         wykaz = []
         descendants = self.generateDescendants(actual)
@@ -267,7 +263,7 @@ class Maze:
         print("\n wykaz", wykaz)
 
     def markTile(self, tile, color):
-        screen_x = -len(self.maze[0])/2*25 + (tile.y * 25)
+        screen_x = -len(self.maze[0])/2*25 + (tile.y * 25) - 500
         screen_y = len(self.maze)/2*25 - (tile.x * 25)
         self.wall.goto(screen_x, screen_y)
         self.wall.setColor(color)
@@ -281,12 +277,88 @@ class Maze:
                 if self.maze[x][y].getGoal() == True:
                     self.markTile(self.maze[x][y], "red")
 
+    def display_graph(self):
+        vertexDict = {}
+        edgeList = []
+        for x in range(len(self.maze)):
+            for y in range(len(self.maze[x])):
+                tile = self.maze[x][y]
+                if tile.getWall() != [True]:
+                    screen_x = -len(self.maze[0])*25 + (tile.y * 50)
+                    screen_y = len(self.maze)*25 - (tile.x * 50)
+                    v = Vertex(tile.id, screen_x, screen_y, tile.h)
+                    vertexDict[tile.id] = v
+
+                    adjacent = self.generateDescendants(tile)
+                    for a in adjacent:
+                        if a.id > tile.id:
+                            edge = Edge(a.id, tile.id)
+                            edgeList.append(edge)
+
+        for edge in edgeList:
+            x1 = float(vertexDict[edge.v1].x)
+            y1 = float(vertexDict[edge.v1].y)
+            x2 = float(vertexDict[edge.v2].x)
+            y2 = float(vertexDict[edge.v2].y)
+            self.node.penup()
+            self.node.goto(x1, y1)
+            self.node.pendown()
+            self.node.goto(x2, y2)
+            if edge.weight != 0:
+                x = (x1 + x2) / 2
+                y = (y1 + y2) / 2
+                self.node.penup()
+                self.node.goto(x, y)
+                self.node.write(str(edge.weight), align="right",
+                                font=("Arial", 12, "normal"))
+
+        for vertexId in vertexDict:
+            vertex = vertexDict[vertexId]
+            x = vertex.x
+            y = vertex.y
+            self.node.penup()
+            self.node.goto(x, y-10)
+
+            self.node.pendown()
+            self.node.fillcolor(0.8, 1, 0.4)
+            self.node.begin_fill()
+            self.node.circle(10)
+            self.node.end_fill()
+            self.node.penup()
+            self.node.goto(x+2, y+11)
+            self.node.write(vertex.label, align="right",
+                            font=("Arial", 12, "bold"))
+
+
+class Node(turtle.Turtle):
+    def __init__(self):
+        turtle.Turtle.__init__(self)
+        self.color("white")
+        self.penup()
+        self.speed(100)
+
+
+class Vertex:
+    def __init__(self, vertexId, x, y, label):
+        self.vertexId = vertexId
+        self.x = x
+        self.y = y
+        self.label = label
+
+
+class Edge:
+    def __init__(self, v1, v2, weight=3):
+        self.v1 = v1
+        self.v2 = v2
+        self.weight = weight
+
 
 wall = Wall()
-maze = Maze(LAYOUT3, wall)
-maze.setCost(8, 1)
+node = Node()
+maze = Maze(LAYOUT2, wall, node)
+maze.setCost(1, 1)
 maze.display()
-maze.printCost()
-maze.RTAStar(1, 9)
+maze.display_graph()
+maze.RTAStar(1, 5)
 
 turtle.done()
