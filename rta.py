@@ -16,7 +16,7 @@ WEIGHTS = [0.5, 0.5]
 window = turtle.Screen()
 window.bgcolor("black")
 window.title("Real-time A* algorithm")
-window.setup(MAZE_HEIGHT*30, MAZE_WIDTH*30)
+window.setup(MAZE_HEIGHT*30, MAZE_WIDTH*30, 100, 100)
 
 
 class Wall(turtle.Turtle):
@@ -27,6 +27,9 @@ class Wall(turtle.Turtle):
         self.penup()
         self.speed(0)
 
+    def setColor(self, color):
+        self.color(color)
+
 
 class Player(turtle.Turtle):
     def __init__(self):
@@ -35,18 +38,6 @@ class Player(turtle.Turtle):
         self.color("blue")
         self.penup()
         self.speed(0)
-
-    def go_up(self):
-        self.goto(self.xcor(), self.ycor() + 25)
-
-    def go_down(self):
-        self.goto(self.xcor(), self.ycor() - 25)
-
-    def go_left(self):
-        self.goto(self.xcor() - 25, self.ycor())
-
-    def go_right(self):
-        self.goto(self.xcor() + 25, self.ycor())
 
 
 class Tile:
@@ -84,36 +75,37 @@ class Tile:
         return self.isGoal
 
 
-LAYOUT = [[1, 1, 1, 1, 1],
-          [1, 0, 0, 0, 1],
-          [1, 0, 1, 0, 1],
-          [1, 0, 1, 0, 1],
-          [1, 1, 1, 1, 1]]
+LAYOUT1 = [[1, 1, 1, 1, 1],
+           [1, 0, 0, 0, 1],
+           [1, 0, 1, 0, 1],
+           [1, 0, 1, 0, 1],
+           [1, 1, 1, 1, 1]]
 
-LAYOUT = [[1, 1, 1, 1, 1, 1, 1],
-          [1, 0, 0, 1, 1, 0, 1],
-          [1, 1, 0, 0, 0, 0, 1],
-          [1, 0, 0, 1, 0, 1, 1],
-          [1, 0, 1, 1, 0, 0, 1],
-          [1, 0, 0, 0, 0, 1, 1],
-          [1, 1, 1, 1, 1, 1, 1]]
+LAYOUT2 = [[1, 1, 1, 1, 1, 1, 1],
+           [1, 0, 0, 1, 1, 0, 1],
+           [1, 1, 0, 0, 0, 0, 1],
+           [1, 0, 0, 1, 0, 1, 1],
+           [1, 0, 1, 1, 0, 0, 1],
+           [1, 0, 0, 0, 0, 1, 1],
+           [1, 1, 1, 1, 1, 1, 1]]
 
-LAYOUT = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-          [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-          [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
-          [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
-          [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
-          [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
-          [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
-          [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
-          [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
-          [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
-          [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
+LAYOUT3 = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+           [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+           [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+           [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+           [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+           [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+           [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+           [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+           [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+           [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+           [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1],
+           [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
 
 
 class Maze:
-    def __init__(self, layout):
+    def __init__(self, layout, wall):
+        self.wall = wall
         self.maze = []
         for x in range(len(layout)):
             row = []
@@ -191,6 +183,8 @@ class Maze:
 
     def RTAStar(self, x_start, y_start):
         actual = self.maze[x_start][y_start]
+        self.markTile(actual, "green")
+        self.wall.speed(1)
         listing = []
         wykaz = []
         descendants = self.generateDescendants(actual)
@@ -203,9 +197,6 @@ class Maze:
             print("actual:", (actual.x, actual.y),
                   "h", actual.h, "f", actual.f)
             descendants = self.generateDescendants(actual)
-            # descendants_temp = [
-            #     x for x in descendants if x not in wykaz]
-            # descendants = descendants_temp
             if ancestor in descendants:
                 descendants.remove(ancestor)
             # for descendant in descendants:
@@ -262,11 +253,12 @@ class Maze:
 
             # for item in listing:
             #     print("listing:", (item.x, item.y))
-
+            self.markTile(actual, "blue")
             self.printCost()
 
         print("\n****Found goal at", (actual.x, actual.y),  "****")
         listing.append(actual)
+        self.markTile(actual, "red")
         # for item in listing:
         #     print("listing:", (item.x, item.y))
         l = [(item.x, item.y) for item in listing]
@@ -274,39 +266,27 @@ class Maze:
         wykaz.append((actual.x, actual.y))
         print("\n wykaz", wykaz)
 
+    def markTile(self, tile, color):
+        screen_x = -len(self.maze[0])/2*25 + (tile.y * 25)
+        screen_y = len(self.maze)/2*25 - (tile.x * 25)
+        self.wall.goto(screen_x, screen_y)
+        self.wall.setColor(color)
+        self.wall.stamp()
 
-def display_maze(maze):
-    for x in range(len(maze)):
-        for y in range(len(maze[x])):
-            isWall = maze[x][y].getWall()
-            screen_x = -len(maze[0])/2*25 + (y * 25)
-            screen_y = len(maze)/2*25 - (x * 25)
-
-            if isWall == [True]:
-                wall.goto(screen_x, screen_y)
-                wall.stamp()
+    def display(self):
+        for x in range(len(self.maze)):
+            for y in range(len(self.maze[x])):
+                if self.maze[x][y].getWall() == [True]:
+                    self.markTile(self.maze[x][y], "white")
+                if self.maze[x][y].getGoal() == True:
+                    self.markTile(self.maze[x][y], "red")
 
 
 wall = Wall()
-
-maze = Maze(LAYOUT)
-display_maze(maze.getMaze())
-maze.setCost(5, 6)
+maze = Maze(LAYOUT3, wall)
+maze.setCost(8, 1)
+maze.display()
 maze.printCost()
 maze.RTAStar(1, 9)
 
-# turtle.done()
-
-# Keyboard
-# turtle.listen()
-# turtle.onkey(player.go_up, "Up")
-# turtle.onkey(player.go_down, "Down")
-# turtle.onkey(player.go_left, "Left")
-# turtle.onkey(player.go_right, "Right")
-
-window.tracer(0)
-
-while True:
-    window.update()
-
-    # time.sleep(0)
+turtle.done()
