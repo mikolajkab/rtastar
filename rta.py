@@ -16,8 +16,8 @@ WEIGHTS = [0.5, 0.5]
 window = turtle.Screen()
 window.bgcolor("black")
 window.title("Real-time A* algorithm: maze")
-window.setup(MAZE_HEIGHT*300, MAZE_WIDTH*300, 100, 100)
-# window.setworldcoordinates(0, 994.80, 1060.80, 0)
+window.screensize()
+window.setup(width=1.0, height=0.95)
 
 
 class Wall(turtle.Turtle):
@@ -219,6 +219,7 @@ class Maze:
                         descendants_prime)+STEP_COST)
                 else:
                     descendant.h_prime = actual.h+STEP_COST
+                    descendant.f = descendant.h_prime+STEP_COST
             for descendant in descendants:
                 descendant.h = descendant.h_prime
 
@@ -264,7 +265,7 @@ class Maze:
 
     def markTile(self, tile, color):
         screen_x = -len(self.maze[0])/2*25 + (tile.y * 25) - 500
-        screen_y = len(self.maze)/2*25 - (tile.x * 25)
+        screen_y = len(self.maze)/2*25 - (tile.x * 25) - 50
         self.wall.goto(screen_x, screen_y)
         self.wall.setColor(color)
         self.wall.stamp()
@@ -284,8 +285,8 @@ class Maze:
             for y in range(len(self.maze[x])):
                 tile = self.maze[x][y]
                 if tile.getWall() != [True]:
-                    screen_x = -len(self.maze[0])*25 + (tile.y * 50)
-                    screen_y = len(self.maze)*25 - (tile.x * 50)
+                    screen_x = -len(self.maze[0])*50 + (tile.y * 100) + 300
+                    screen_y = len(self.maze)*50 - (tile.x * 100) - 50
                     v = Vertex(tile.id, screen_x, screen_y, tile.h)
                     vertexDict[tile.id] = v
 
@@ -310,24 +311,25 @@ class Maze:
                 self.node.penup()
                 self.node.goto(x, y)
                 self.node.write(str(edge.weight), align="right",
-                                font=("Arial", 12, "normal"))
+                                font=("Arial", 14, "normal"))
 
         for vertexId in vertexDict:
             vertex = vertexDict[vertexId]
             x = vertex.x
             y = vertex.y
             self.node.penup()
-            self.node.goto(x, y-10)
+            self.node.goto(x, y-20)
 
             self.node.pendown()
-            self.node.fillcolor(0.8, 1, 0.4)
+            self.node.fillcolor(0, 0, 0)
             self.node.begin_fill()
-            self.node.circle(10)
+            self.node.circle(20)
             self.node.end_fill()
             self.node.penup()
-            self.node.goto(x+2, y+11)
-            self.node.write(vertex.label, align="right",
-                            font=("Arial", 12, "bold"))
+            self.node.goto(x, y-12)
+            self.node.write(vertex.label, align="center",
+                            font=("Arial", 16, "bold"))
+        self.node.penup()
 
 
 class Node(turtle.Turtle):
@@ -359,6 +361,6 @@ maze = Maze(LAYOUT2, wall, node)
 maze.setCost(1, 1)
 maze.display()
 maze.display_graph()
-maze.RTAStar(1, 5)
+maze.RTAStar(5, 4)
 
 turtle.done()
