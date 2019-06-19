@@ -27,8 +27,8 @@ class Wall(turtle.Turtle):
         self.penup()
         self.speed(0)
 
-    def setColor(self, color):
-        self.color(color)
+    # def setColor(self, color):
+    #     self.color(color)
 
 
 class Tile:
@@ -41,30 +41,6 @@ class Tile:
         self.h_prime = '-'
         self.f = '-'
         self.id = 0
-
-    def setWall(self, wall):
-        self.isWall = wall
-
-    def getWall(self):
-        return self.isWall
-
-    def setH(self, h):
-        self.h = h
-
-    def getH(self):
-        return self.h
-
-    def setF(self, f):
-        self.f = f
-
-    def getF(self):
-        return self.f
-
-    def setGoal(self):
-        self.isGoal = True
-
-    def getGoal(self):
-        return self.isGoal
 
 
 class Node(turtle.Turtle):
@@ -194,7 +170,7 @@ class Maze:
                 id += 1
                 tile.id = id
                 if layout[x][y] == 1:
-                    tile.setWall([True])
+                    tile.isWall = [True]
                 row.append(tile)
             self.maze.append(row)
 
@@ -204,9 +180,9 @@ class Maze:
     def setCost(self, x_goal, y_goal):
         visited = set()
         goal = self.maze[x_goal][y_goal]
-        goal.setGoal()
+        goal.isGoal = True
         queue = [goal]
-        goal.setH(0)
+        goal.h = 0
         while queue:
             actual = queue.pop(0)
             if actual not in visited:
@@ -218,7 +194,7 @@ class Maze:
         for x in range(len(self.maze)):
             costRow = []
             for y in range(len(self.maze[x])):
-                costRow.append(self.maze[x][y].getH())
+                costRow.append(self.maze[x][y].h)
             costTable.append(costRow)
         print(numpy.matrix(costTable))
 
@@ -231,8 +207,8 @@ class Maze:
 
         unvisited = []
         for t in adjacent:
-            if t.getWall() == [0] and t.getH() == '-':
-                t.setH(tile.getH()+random.randint(1, 3))
+            if t.isWall == [0] and t.h == '-':
+                t.h = tile.h+random.randint(1, 3)
                 unvisited.append(t)
         return unvisited
 
@@ -245,13 +221,13 @@ class Maze:
 
         descendants = []
         for t in adjacent:
-            if t.getWall() == [0]:
+            if t.isWall == [0]:
                 descendants.append(t)
         return descendants
 
     def getMinH(self, tiles):
         tileMinH = min(tiles, key=attrgetter('h'))
-        return tileMinH.getH()+STEP_COST
+        return tileMinH.h+STEP_COST
 
     def getTileMinF(self, tiles):
         return min(tiles, key=attrgetter('f'))
@@ -280,10 +256,10 @@ class Maze:
         listing = []
         wykaz = []
         descendants = self.generateDescendants(actual)
-        actual.setF(self.getMinH(descendants))
+        actual.f = self.getMinH(descendants)
         ancestor = None
         iter = 0
-        while actual.getGoal() != True:
+        while actual.isGoal != True:
             iter += 1
             print("\n**** ITERATION", iter, "****")
             print("actual:", (actual.x, actual.y),
@@ -300,19 +276,18 @@ class Maze:
                 #       "h", descendant.h, "f", descendant.f)
                 if descendant.h == 0:
                     descendant.h_prime = 0
-                    descendant.setF(STEP_COST)
+                    descendant.f = STEP_COST
                 elif descendants_prime:
                     # for dp in descendants_prime:
                     #     print("descendant_prime:", (dp.x, dp.y))
                     # print("minH_prime", (descendant.x, descendant.y),
                     #       self.getMinH(descendants_prime))
-                    descendant.setH(self.getMinH(descendants_prime))
+                    descendant.h = self.getMinH(descendants_prime)
                     descendant.h_prime = self.getMinH(descendants_prime)
 
                     # print("minF", (descendant.x, descendant.y),
                     #       self.getMinH(descendants_prime)+STEP_COST)
-                    descendant.setF(self.getMinH(
-                        descendants_prime)+STEP_COST)
+                    descendant.f = self.getMinH(descendants_prime)+STEP_COST
                 else:
                     descendant.h_prime = actual.h+STEP_COST
                     descendant.f = descendant.h_prime+STEP_COST
@@ -321,7 +296,7 @@ class Maze:
 
             if ancestor and (actual.x, actual.y) not in wykaz:
                 # print("ancestorH", (ancestor.x, ancestor.y), ancestor.h)
-                ancestor.setF(ancestor.getH()+STEP_COST)
+                ancestor.f = ancestor.h+STEP_COST
                 # print("ancestorF", (ancestor.x, ancestor.y), "f", ancestor.f)
                 descendants.append(ancestor)
             for descendant in descendants:
@@ -334,7 +309,7 @@ class Maze:
             new = self.getTileMinF(descendants)
             print("new:", (new.x, new.y),
                   "h", new.h, "f", new.f)
-            actual.setH(tileSecondMinF.getF())
+            actual.h = tileSecondMinF.f
             listing.append(actual)
             if (actual.x, actual.y) not in wykaz:
                 wykaz.append((actual.x, actual.y))
@@ -367,15 +342,15 @@ class Maze:
         screen_x = -len(self.maze[0])/2*25 + (tile.y * 25) - 500
         screen_y = len(self.maze)/2*25 - (tile.x * 25) - 50
         self.wall.goto(screen_x, screen_y)
-        self.wall.setColor(color)
+        self.wall.color(color)
         self.wall.stamp()
 
     def display(self):
         for x in range(len(self.maze)):
             for y in range(len(self.maze[x])):
-                if self.maze[x][y].getWall() == [True]:
+                if self.maze[x][y].isWall == [True]:
                     self.markTile(self.maze[x][y], "white")
-                if self.maze[x][y].getGoal() == True:
+                if self.maze[x][y].isGoal == True:
                     self.markTile(self.maze[x][y], "red")
 
     def display_graph(self):
@@ -384,7 +359,7 @@ class Maze:
         for x in range(len(self.maze)):
             for y in range(len(self.maze[x])):
                 tile = self.maze[x][y]
-                if tile.getWall() != [True]:
+                if tile.isWall != [True]:
                     screen_x = self.getScreenX(tile)
                     screen_y = self.getScreenY(tile)
                     v = Vertex(tile.id, screen_x, screen_y, tile.h)
