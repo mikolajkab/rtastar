@@ -1,23 +1,19 @@
 import turtle
-import time
 import random
 import numpy
-import math
+import ast
+
 from operator import attrgetter
 
-
-MAZE_HEIGHT = 14
-MAZE_WIDTH = 14
 STEP_COST = 3
 
-POPULATION = [0, 1]
-WEIGHTS = [0.5, 0.5]
 
-window = turtle.Screen()
-window.bgcolor("black")
-window.title("Real-time A* algorithm: maze")
-window.screensize()
-window.setup(width=1.0, height=0.95)
+def windowSetup():
+    window = turtle.Screen()
+    window.bgcolor("black")
+    window.title("Real-time A* algorithm: maze")
+    window.screensize()
+    window.setup(width=1.0, height=0.95)
 
 
 class Wall(turtle.Turtle):
@@ -381,13 +377,29 @@ class Maze:
                            vertexDict[edge.v2].x, vertexDict[edge.v2].y)
 
 
-wall = Wall()
-node = Node()
-line = Line()
-maze = Maze(LAYOUT5, wall, node, line)
-maze.setCost(1, 1)
-maze.display()
-maze.display_graph()
-maze.RTAStar(1, 9)
+def main():
+    print("Przeszukiwanie RTA*. Problem przejscia przez labirynt.")
+    raw_layout = input("""Podaj dwu wymiarowa liste m x n okreslajaca labirynt, gdzie:
+    0 - wolne pole, 1 - sciana, a labirynt jest otoczony przez sciany. Pryklad:
+    [[1, 1, 1, 1, 1], [1, 0, 0, 0, 1], [1, 0, 1, 0, 1], [1, 0, 0, 0, 1], [1, 1, 1, 1, 1]]\n""")
+    goal_x, goal_y = [int(x) for x in input(
+        "Podaj CEL jako koordynaty  x i y gdzie x - rzad, y - kolumna, lewy gorny rog to 0,0. Przyklad: 1,1\n").split(",")]
+    start_x, start_y = [int(x) for x in input(
+        "Podaj START jako koordynaty  x i y gdzie x - rzad, y - kolumna, lewy gorny rog to 0,0. Przyklad: 3,3\n").split(",")]
 
-turtle.done()
+    layout = ast.literal_eval(raw_layout)
+    print(goal_x, goal_y)
+    windowSetup()
+    wall = Wall()
+    node = Node()
+    line = Line()
+    maze = Maze(layout, wall, node, line)
+    maze.setCost(goal_x, goal_y)
+    maze.display()
+    maze.display_graph()
+    maze.RTAStar(start_x, start_y)
+    turtle.done()
+
+
+if __name__ == "__main__":
+    main()
