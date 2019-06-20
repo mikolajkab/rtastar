@@ -27,9 +27,6 @@ class Wall(turtle.Turtle):
         self.penup()
         self.speed(0)
 
-    # def setColor(self, color):
-    #     self.color(color)
-
 
 class Tile:
     def __init__(self, x, y):
@@ -51,15 +48,12 @@ class Node(turtle.Turtle):
         self.penup()
         self.speed(0)
 
-    def draw(self, x, y, label, color):
-        self.penup()
+    def draw(self, x, y, label, color, position):
         self.goto(x, y)
         self.color(color)
         self.stamp()
-        self.penup()
-        self.goto(x, y+10)
-        if label:
-            self.write(label, align="center", font=("Arial", 16, "bold"))
+        self.goto(x+position, y+10)
+        self.write(label, "left", font=("Arial", 16, "bold"))
 
 
 class Line(turtle.Turtle):
@@ -249,7 +243,7 @@ class Maze:
         actual = self.maze[x_start][y_start]
         self.markTile(actual, "green")
         self.node.draw(self.getScreenX(actual),
-                       self.getScreenY(actual), actual.h, "green")
+                       self.getScreenY(actual), actual.h, "green", -20)
         self.wall.speed(5)
         self.node.speed(5)
 
@@ -293,6 +287,8 @@ class Maze:
                     descendant.f = descendant.h_prime+STEP_COST
             for descendant in descendants:
                 descendant.h = descendant.h_prime
+                self.node.draw(self.getScreenX(descendant),
+                               self.getScreenY(descendant), descendant.h, "yellow", 10)
 
             if ancestor and (actual.x, actual.y) not in wykaz:
                 # print("ancestorH", (ancestor.x, ancestor.y), ancestor.h)
@@ -323,14 +319,14 @@ class Maze:
             #     print("listing:", (item.x, item.y))
             self.markTile(actual, "blue")
             self.node.draw(self.getScreenX(actual),
-                           self.getScreenY(actual), False, "blue")
+                           self.getScreenY(actual), actual.h, "blue", 10)
             self.printCost()
 
         print("\n****Found goal at", (actual.x, actual.y),  "****")
         listing.append(actual)
         self.markTile(actual, "red")
         self.node.draw(self.getScreenX(actual),
-                       self.getScreenY(actual), False, "red")
+                       self.getScreenY(actual), actual.h, "red", 10)
         # for item in listing:
         #     print("listing:", (item.x, item.y))
         l = [(item.x, item.y) for item in listing]
@@ -372,26 +368,26 @@ class Maze:
                             edge = Edge(a.id, tile.id)
                             edgeList.append(edge)
 
-        for edge in edgeList:
-            self.line.draw(vertexDict[edge.v1].x, vertexDict[edge.v1].y,
-                           vertexDict[edge.v2].x, vertexDict[edge.v2].y)
-
         for vertexId in vertexDict:
             vertex = vertexDict[vertexId]
             if vertex.isGoal:
                 color = "red"
             else:
                 color = "white"
-            self.node.draw(vertex.x, vertex.y, vertex.label, color)
+            self.node.draw(vertex.x, vertex.y, vertex.label, color, -20)
+
+        for edge in edgeList:
+            self.line.draw(vertexDict[edge.v1].x, vertexDict[edge.v1].y,
+                           vertexDict[edge.v2].x, vertexDict[edge.v2].y)
 
 
 wall = Wall()
 node = Node()
 line = Line()
-maze = Maze(LAYOUT3, wall, node, line)
-maze.setCost(6, 2)
+maze = Maze(LAYOUT5, wall, node, line)
+maze.setCost(1, 1)
 maze.display()
 maze.display_graph()
-maze.RTAStar(7, 9)
+maze.RTAStar(1, 9)
 
 turtle.done()
