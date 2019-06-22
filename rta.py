@@ -2,6 +2,7 @@ import turtle
 import random
 import numpy
 import ast
+import argparse
 
 from operator import attrgetter
 
@@ -11,17 +12,10 @@ STEP_COST = 3
 def windowSetup():
     window = turtle.Screen()
     window.bgcolor("black")
-    window.title("Real-time A* algorithm: maze")
+    window.title(
+        "Przeszukiwanie RTA*. Problem „przejścia przez labirynt”")
     window.screensize()
     window.setup(width=1.0, height=0.95)
-
-
-class Wall(turtle.Turtle):
-    def __init__(self):
-        turtle.Turtle.__init__(self)
-        self.shape("square")
-        self.penup()
-        self.speed(0)
 
 
 class Tile:
@@ -34,6 +28,22 @@ class Tile:
         self.h_prime = '-'
         self.f = '-'
         self.id = 0
+
+
+class Vertex:
+    def __init__(self, vertexId, x, y, label):
+        self.vertexId = vertexId
+        self.x = x
+        self.y = y
+        self.label = label
+        self.isGoal = False
+
+
+class Edge:
+    def __init__(self, v1, v2, weight=3):
+        self.v1 = v1
+        self.v2 = v2
+        self.weight = weight
 
 
 class Node(turtle.Turtle):
@@ -50,6 +60,14 @@ class Node(turtle.Turtle):
         self.stamp()
         self.goto(x+position, y+10)
         self.write(label, "left", font=("Arial", 16, "bold"))
+
+
+class Wall(turtle.Turtle):
+    def __init__(self):
+        turtle.Turtle.__init__(self)
+        self.shape("square")
+        self.penup()
+        self.speed(0)
 
 
 class Line(turtle.Turtle):
@@ -76,26 +94,10 @@ class Line(turtle.Turtle):
                    font=("Arial", 14, "normal"))
 
 
-class Vertex:
-    def __init__(self, vertexId, x, y, label):
-        self.vertexId = vertexId
-        self.x = x
-        self.y = y
-        self.label = label
-        self.isGoal = False
-
-
-class Edge:
-    def __init__(self, v1, v2, weight=3):
-        self.v1 = v1
-        self.v2 = v2
-        self.weight = weight
-
-
 LAYOUT1 = [[1, 1, 1, 1, 1],
            [1, 0, 0, 0, 1],
            [1, 0, 1, 0, 1],
-           [1, 0, 1, 0, 1],
+           [1, 0, 0, 0, 1],
            [1, 1, 1, 1, 1]]
 
 LAYOUT2 = [[1, 1, 1, 1, 1, 1, 1],
@@ -121,15 +123,15 @@ LAYOUT3 = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 
 LAYOUT4 = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+           [1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1],
+           [1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+           [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+           [1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1],
            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-           [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-           [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-           [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-           [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-           [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-           [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-           [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-           [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+           [1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1],
+           [1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1],
+           [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+           [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
 
 LAYOUT5 = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -142,11 +144,11 @@ LAYOUT5 = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
            [1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1],
            [1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1],
            [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
-           [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+           [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
 
 
-class Maze:
+class App:
     def __init__(self, layout, wall, node, line):
         self.wall = wall
         self.node = node
@@ -163,9 +165,6 @@ class Maze:
                     tile.isWall = [True]
                 row.append(tile)
             self.maze.append(row)
-
-    def getMaze(self):
-        return self.maze
 
     def setCost(self, x_goal, y_goal):
         visited = set()
@@ -243,7 +242,7 @@ class Maze:
         self.wall.speed(5)
         self.node.speed(5)
 
-        listing = []
+        listing = set()
         wykaz = []
         descendants = self.generateDescendants(actual)
         actual.f = self.getMinH(descendants)
@@ -285,6 +284,7 @@ class Maze:
                 descendant.h = descendant.h_prime
                 self.node.draw(self.getScreenX(descendant),
                                self.getScreenY(descendant), descendant.h, "yellow", 10)
+                listing.add(descendant)
 
             if ancestor and (actual.x, actual.y) not in wykaz:
                 # print("ancestorH", (ancestor.x, ancestor.y), ancestor.h)
@@ -302,12 +302,12 @@ class Maze:
             print("new:", (new.x, new.y),
                   "h", new.h, "f", new.f)
             actual.h = tileSecondMinF.f
-            listing.append(actual)
             if (actual.x, actual.y) not in wykaz:
                 wykaz.append((actual.x, actual.y))
+            listing.add(actual)
             ancestor = actual
-            print("actual:", (actual.x, actual.y),
-                  "h", ancestor.h, "f", ancestor.f)
+            print("actual (updated):", (actual.x, actual.y),
+                  "h", actual.h, "f", actual.f)
 
             actual = new
 
@@ -316,19 +316,21 @@ class Maze:
             self.markTile(actual, "blue")
             self.node.draw(self.getScreenX(actual),
                            self.getScreenY(actual), actual.h, "blue", 10)
+            print("cost so far:", STEP_COST*iter)
+            print("actualized cost h:")
             self.printCost()
 
         print("\n****Found goal at", (actual.x, actual.y),  "****")
-        listing.append(actual)
         self.markTile(actual, "red")
         self.node.draw(self.getScreenX(actual),
                        self.getScreenY(actual), actual.h, "red", 10)
-        # for item in listing:
-        #     print("listing:", (item.x, item.y))
         l = [(item.x, item.y) for item in listing]
         print("\n listing:", l)
+        print("length(listing):", len(listing))
+
         wykaz.append((actual.x, actual.y))
         print("\n wykaz", wykaz)
+        print("length(wykaz):", len(wykaz))
 
     def markTile(self, tile, color):
         screen_x = -len(self.maze[0])/2*25 + (tile.y * 25) - 500
@@ -337,7 +339,7 @@ class Maze:
         self.wall.color(color)
         self.wall.stamp()
 
-    def display(self):
+    def displayMaze(self):
         for x in range(len(self.maze)):
             for y in range(len(self.maze[x])):
                 if self.maze[x][y].isWall == [True]:
@@ -345,7 +347,7 @@ class Maze:
                 if self.maze[x][y].isGoal == True:
                     self.markTile(self.maze[x][y], "red")
 
-    def display_graph(self):
+    def displayGraph(self):
         vertexDict = {}
         edgeList = []
         for x in range(len(self.maze)):
@@ -378,26 +380,51 @@ class Maze:
 
 
 def main():
-    print("Przeszukiwanie RTA*. Problem przejscia przez labirynt.")
-    raw_layout = input("""Podaj dwu wymiarowa liste m x n okreslajaca labirynt, gdzie:
-    0 - wolne pole, 1 - sciana, a labirynt jest otoczony przez sciany. Pryklad:
-    [[1, 1, 1, 1, 1], [1, 0, 0, 0, 1], [1, 0, 1, 0, 1], [1, 0, 0, 0, 1], [1, 1, 1, 1, 1]]\n""")
-    goal_x, goal_y = [int(x) for x in input(
-        "Podaj CEL jako koordynaty  x i y gdzie x - rzad, y - kolumna, lewy gorny rog to 0,0. Przyklad: 1,1\n").split(",")]
-    start_x, start_y = [int(x) for x in input(
-        "Podaj START jako koordynaty  x i y gdzie x - rzad, y - kolumna, lewy gorny rog to 0,0. Przyklad: 3,3\n").split(",")]
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-demo')
+    args = parser.parse_args()
 
-    layout = ast.literal_eval(raw_layout)
-    print(goal_x, goal_y)
+    if args.demo == "1":
+        layout = LAYOUT1
+        x_goal, y_goal = 1, 1
+        x_start, y_start = 3, 3
+    elif args.demo == "2":
+        layout = LAYOUT2
+        x_goal, y_goal = 1, 1
+        x_start, y_start = 4, 5
+    elif args.demo == "3":
+        layout = LAYOUT3
+        x_goal, y_goal = 9, 2
+        x_start, y_start = 2, 9
+    elif args.demo == "4":
+        layout = LAYOUT4
+        x_goal, y_goal = 9, 5
+        x_start, y_start = 1, 9
+    elif args.demo == "5":
+        layout = LAYOUT5
+        x_goal, y_goal = 1, 2
+        x_start, y_start = 1, 9
+    else:
+        print("Przeszukiwanie RTA*. Problem przejscia przez labirynt.")
+        raw_layout = input("""Podaj dwu wymiarowa liste m x n okreslajaca labirynt, gdzie:
+        0 - wolne pole, 1 - sciana, a labirynt jest otoczony przez sciany. Pryklad:
+        [[1, 1, 1, 1, 1], [1, 0, 0, 0, 1], [1, 0, 1, 0, 1], [1, 0, 0, 0, 1], [1, 1, 1, 1, 1]]\n""")
+        x_goal, y_goal = [int(x) for x in input(
+            "Podaj CEL jako wspolrzedne x i y gdzie x - rzad, y - kolumna, lewy gorny rog to 0,0. Przyklad: 1,1\n").split(",")]
+        x_start, y_start = [int(x) for x in input(
+            "Podaj START jako wspolrzedne x i y gdzie x - rzad, y - kolumna, lewy gorny rog to 0,0. Przyklad: 3,3\n").split(",")]
+
+        layout = ast.literal_eval(raw_layout)
+
     windowSetup()
     wall = Wall()
     node = Node()
     line = Line()
-    maze = Maze(layout, wall, node, line)
-    maze.setCost(goal_x, goal_y)
-    maze.display()
-    maze.display_graph()
-    maze.RTAStar(start_x, start_y)
+    maze = App(layout, wall, node, line)
+    maze.setCost(x_goal, y_goal)
+    maze.displayMaze()
+    maze.displayGraph()
+    maze.RTAStar(x_start, y_start)
     turtle.done()
 
 
